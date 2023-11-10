@@ -10,7 +10,11 @@ BleKeyboard bleKeyboard;
 //Gnd --> Gnd 
 
 int aState;
-int aLastState;  
+int aLastState;
+int buttonState = HIGH;   // Assuming the button is normally open
+int lastButtonState = HIGH;
+unsigned long lastDebounceTime = 0;
+unsigned long debounceDelay = 50;  
 
 void setup()
 { 
@@ -28,12 +32,24 @@ void loop()
 {
     if(bleKeyboard.isConnected()) {
 
-        int btn = digitalRead(PinSW);
-        
-        if (!(digitalRead(PinSW))) {
-            bleKeyboard.write(KEY_MEDIA_MUTE);
-            delay(250);    
+        int reading = digitalRead(PinSW);
+
+        if (reading != lastButtonState) {
+            lastDebounceTime = millis();
         }
+
+        if ((millis() - lastDebounceTime) > debounceDelay) {
+            if (reading != buttonState) {
+            buttonState = reading;
+
+            if (!(digitalRead(PinSW))) {
+                    bleKeyboard.write(KEY_MEDIA_MUTE);
+                    delay(250);    
+                }
+            }
+        }
+
+        lastButtonState = reading;
         
         aState = digitalRead(outputA); // Reads the "current" state of the outputA
         if (aState != aLastState){     
